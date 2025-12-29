@@ -1,6 +1,6 @@
 # New York Subway Crowd Volume Predictor
 
-Developed a Machine Learning Model that predicts the live subway crowd of the top 50 used subway stations
+Developed a Machine Learning Model that predicts the live subway crowd of the top 50 stations
 
 ![Dashboard Screenshot](image/dashboard.jpeg)
 
