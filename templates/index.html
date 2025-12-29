@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NYC Subway Crowd Predictor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body { background-color: #121212; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; margin: 0; padding: 20px; }
+        h1 { margin-bottom: 10px; }
+        #map { height: 500px; width: 80%; margin: 20px auto; border: 2px solid #444; border-radius: 10px;}
+        .leaflet-tile-pane {filter: brightness(3.0) contrast(1.1);}
+        
+        .dashboard { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 10px; width: 200px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card h3 { color: #aaa; font-size: 14px; margin-top: 0; }
+        .big-text { font-size: 32px; font-weight: bold; color: #4db8ff; }
+        
+        button { padding: 10px 20px; background: #4db8ff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 20px;}
+        button:hover { background: #3399cc; }
+    </style>
+</head>
+<body>
+
+    <h1>Live NYC Subway Crowd Predictor</h1>
+    <p>Select any station on the map to get the live rider counts</p>
+
+    <div id="map"></div>
+
+    <div class="dashboard">
+        <div class="card">
+            <h3>SELECTED STATION</h3>
+            <div id="station-name" style="font-size: 18px; color: white;">--</div>
+        </div>
+        <div class="card">
+            <h3>PREDICTED RIDERS</h3>
+            <div id="prediction" class="big-text">--</div>
+        </div>
+        <div class="card">
+            <h3>CURRENT WEATHER</h3>
+            <div id="weather-display" class="big-text">--</div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([40.73, -73.99], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        var stations = [];
+        fetch('/static/station_coordinates.json')
+            .then(response => response.json())
+            .then(data => {
+                console.log("file successfully loaded"); 
+                console.log(data);        
+                
+                stations = data; 
+                stations.forEach(function(s) {
+                    if (s === stations[0]) {
+                        console.log("First station keys:", Object.keys(s)); 
+                    }
+
+                    if(s.lat && s.long) {
+                        var marker = L.circleMarker([s.lat, s.long], {
+                            radius: 6,
+                            fillColor: "#4db8ff",
+                            color: "#ffffff",
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).addTo(map);
+                        marker.bindPopup(`<b>${s.name}</b><br>Check out the live crowd volume`);
+                        marker.on('click', function() { getPrediction(s.name); });
+                    } else {
+                        if (s === stations[0]) console.log("Skip the first station - something is missing");
+                    }
+                });
+            })
+            .catch(err => console.error("FATAL ERROR:", err));
+
+        function getPrediction(stationName) {
+            document.getElementById('station-name').innerText = stationName;
+            document.getElementById('prediction').innerText = "Loading...";
+        
+            var currentHour = new Date().getHours();
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ station: stationName, hour: currentHour })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.error) {
+                    alert("Error: " + data.error);
+                } else {
+                    document.getElementById('prediction').innerText = data.crowd_count;
+                    document.getElementById('weather-display').innerText = data.weather;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('prediction').innerText = "Error";
+            });
+        }
+    </script>
+</body>
+</html>
