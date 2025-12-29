@@ -2,7 +2,7 @@
 
 Developed a Machine Learning Model that predicts the live subway crowd of the top 50 used subway stations
 
-![Dashboard Screenshot][image/Image 12-29-25 at 12.54 AM.jpeg]
+![Dashboard Screenshot](image/Image 12-29-25 at 12.54 AM.jpeg)
 
 ## Key Features
 - **Interactive Map:** Leaflet.js map to select any subway station in NYC
